@@ -1,8 +1,8 @@
 [build]
-  command = "go build -o functions/items/get items/get.go"
+  command = "go build -o main ./..."
   functions = "functions"
 
 [[redirects]]
-  from = "/api/*"
+  from = "/*"
   to = "/.netlify/functions/:splat"
   status = 200
