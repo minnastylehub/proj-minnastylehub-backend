@@ -1,5 +1,5 @@
 [build]
-  command = "go build -o main ./..."
+  command = "go build -o ./main ."
   functions = "functions"
 
 [[redirects]]
