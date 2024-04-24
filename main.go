@@ -2,10 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"minna-style-hub/database"
-	"minna-style-hub/handlers"
+	"minna-style-hub/functions"
 	"net/http"
 	"os"
 	"time"
@@ -29,7 +28,6 @@ type CustomClaims struct {
 
 // SecretKey for signing JWT tokens
 var SecretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
-
 
 // GenerateJWTToken generates a JWT token for the given username and isAdmin status
 func GenerateJWTToken(username string, isAdmin bool) (string, error) {
@@ -138,13 +136,13 @@ func main() {
 	}
 
 	// Define routes
-	r.HandleFunc("/items", handlers.GetAllItems).Methods("GET")
-	r.HandleFunc("/item/{id}", handlers.GetItem).Methods("GET")
-	r.HandleFunc("/feedback", handlers.GetFeedback).Methods("POST")
+	r.HandleFunc("/items", functions.GetAllItems).Methods("GET")
+	r.HandleFunc("/item/{id}", functions.GetItem).Methods("GET")
+	r.HandleFunc("/feedback", functions.GetFeedback).Methods("POST")
 	r.HandleFunc("/login", LoginHandler).Methods("POST")
-	r.Handle("/items/add", AuthMiddleware(http.HandlerFunc(handlers.AddItem))).Methods("POST")
-	r.Handle("/items/update", AuthMiddleware(http.HandlerFunc(handlers.UpdateItem))).Methods("PUT")
-	r.Handle("/items/{id}", AuthMiddleware(http.HandlerFunc(handlers.DeleteItem))).Methods("DELETE")
+	r.Handle("/items/add", AuthMiddleware(http.HandlerFunc(functions.AddItem))).Methods("POST")
+	r.Handle("/items/update", AuthMiddleware(http.HandlerFunc(functions.UpdateItem))).Methods("PUT")
+	r.Handle("/items/{id}", AuthMiddleware(http.HandlerFunc(functions.DeleteItem))).Methods("DELETE")
 
 	log.Println("Server is running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

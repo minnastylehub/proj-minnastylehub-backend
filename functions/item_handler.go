@@ -1,4 +1,4 @@
-package handlers
+package functions
 
 import (
 	"encoding/base64"
