@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"minna-style-hub/database"
 	models "minna-style-hub/model"
+	"minna-style-hub/sendemail"
 	"net/http"
+	"os"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -101,4 +105,80 @@ func DeleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func GetFeedback(w http.ResponseWriter, r *http.Request) {
+	emailFrom := os.Getenv("EMAIL_FROM")
+	if emailFrom == "" {
+		log.Fatal("EMAIL_FROM not found in .env file")
+	}
+	emailPass := os.Getenv("EMAIL_PASSWORD")
+	if emailPass == "" {
+		log.Fatal("EMAIL_PASSWORD not found in .env file")
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var feedbackItem models.Feedback
+	if err := json.NewDecoder(r.Body).Decode(&feedbackItem); err != nil {
+		log.Println(err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	// Parse form data
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	// Get form values
+	name := feedbackItem.Name
+	email := feedbackItem.Email
+	message := feedbackItem.Message
+
+	// Send email
+	to := "tjminna@gmail.com" // Replace with your Gmail address
+	subject := "Feedback from Contact Form"
+	body := fmt.Sprintf("Name: %s\nEmail: %s\nMessage: %s", name, email, message)
+	err = sendemail.SendEmail(to, subject, body, emailFrom, emailPass)
+	if err != nil {
+		http.Error(w, "Failed to send email", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println(email)
+	// Send thankyou email
+	thank_to := email // Replace with your Gmail address
+	thank_subject := "Thank You for Your Feedback!"
+	thank_body := fmt.Sprintf("Thank you for your feedback, %s! We appreciate your time.<br><br><img src=\"cid:thankyou-image\">", name)
+
+	err = sendemail.ThankyouEmail(thank_to, thank_subject, thank_body, emailFrom, emailPass)
+	if err != nil {
+		http.Error(w, "Failed to send thank you email", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond to the client
+	fmt.Fprintf(w, "Thank you email sent successfully")
+}
+
+func getImageBase64() string {
+	// Path to the image file
+	imagePath := "C:\\Users\\binwi\\Desktop\\Folders\\study\\proj-minnastylehub-backend\\assets\\thankyou-image.png"
+
+	// Read the image file
+	imageData, err := os.ReadFile(imagePath)
+	if err != nil {
+		fmt.Println("Error reading image file:", err)
+		return ""
+	}
+
+	// Encode image data to base64
+	imageBase64 := base64.StdEncoding.EncodeToString(imageData)
+	return imageBase64
 }

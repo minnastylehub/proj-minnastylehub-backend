@@ -9,3 +9,9 @@ type Item struct {
 	Images     []string `json:"images"`
 	ButtonLink string   `json:"buttonLink"`
 }
+
+type Feedback struct {
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Message string `json:"message"`
+}

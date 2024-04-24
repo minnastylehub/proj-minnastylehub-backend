@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"minna-style-hub/database"
 	"minna-style-hub/handlers"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -26,7 +28,8 @@ type CustomClaims struct {
 }
 
 // SecretKey for signing JWT tokens
-var SecretKey = []byte("your-secret-key")
+var SecretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
+
 
 // GenerateJWTToken generates a JWT token for the given username and isAdmin status
 func GenerateJWTToken(username string, isAdmin bool) (string, error) {
@@ -52,14 +55,27 @@ func GenerateJWTToken(username string, isAdmin bool) (string, error) {
 // LoginHandler handles user authentication and issues JWT token
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var creds Credentials
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+	if adminUsername == "" {
+		log.Fatal("ADMIN_USERNAME not found in .env file")
+	}
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	if adminPassword == "" {
+		log.Fatal("ADMIN_PASSWORD not found in .env file")
+	}
 	err := json.NewDecoder(r.Body).Decode(&creds)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
+	fmt.Println(creds.Username)
+	fmt.Println(creds.Password)
+	fmt.Println(adminUsername)
+	fmt.Println(adminPassword)
+
 	// Perform authentication (replace this with your actual authentication logic)
-	isAdmin := creds.Username == "admin" && creds.Password == "Minna@6724"
+	isAdmin := creds.Username == adminUsername && creds.Password == adminPassword
 
 	// Generate JWT token
 	if isAdmin {
@@ -129,12 +145,12 @@ func main() {
 	// Define routes
 	r.HandleFunc("/items", handlers.GetAllItems).Methods("GET")
 	r.HandleFunc("/item/{id}", handlers.GetItem).Methods("GET")
+	r.HandleFunc("/feedback", handlers.GetFeedback).Methods("POST")
 	r.HandleFunc("/login", LoginHandler).Methods("POST")
 	r.Handle("/items/add", AuthMiddleware(http.HandlerFunc(handlers.AddItem))).Methods("POST")
 	r.Handle("/items/update", AuthMiddleware(http.HandlerFunc(handlers.UpdateItem))).Methods("PUT")
 	r.Handle("/items/{id}", AuthMiddleware(http.HandlerFunc(handlers.DeleteItem))).Methods("DELETE")
 
 	log.Println("Server is running on port 8080")
-	log.Fatal(http.ListenAndServe("", r))
-
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

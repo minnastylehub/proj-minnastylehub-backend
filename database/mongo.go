@@ -2,31 +2,42 @@ package database
 
 import (
 	"context"
+	"log"
 	models "minna-style-hub/model"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MongoDB configuration
+// MongoDB client
+var client *mongo.Client
+
 var (
-	mongoURI       = "mongodb://localhost:27017"
 	databaseName   = "mydatabase"
 	collectionName = "items"
 )
 
-// MongoDB client
-var client *mongo.Client
-
 // ConnectToMongoDB connects to MongoDB
 func ConnectToMongoDB() error {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		log.Fatal("MONGODB_URI not found in .env file")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	clientOptions := options.Client().ApplyURI(mongoURI)
-	var err error
+
 	client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return err
