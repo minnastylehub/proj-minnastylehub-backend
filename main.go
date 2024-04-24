@@ -144,6 +144,14 @@ func main() {
 	r.Handle("/items/update", AuthMiddleware(http.HandlerFunc(functions.UpdateItem))).Methods("PUT")
 	r.Handle("/items/{id}", AuthMiddleware(http.HandlerFunc(functions.DeleteItem))).Methods("DELETE")
 
-	log.Println("Server is running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	port := os.Getenv("PORT")
+
+	if port == "" {
+        port = "3000"
+    }
+
+	log.Println("Server is running on port "+ port)
+
+
+	log.Fatal(http.ListenAndServe("0.0.0.0:" + port, r))
 }
