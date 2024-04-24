@@ -69,11 +69,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(creds.Username)
-	fmt.Println(creds.Password)
-	fmt.Println(adminUsername)
-	fmt.Println(adminPassword)
-
 	// Perform authentication (replace this with your actual authentication logic)
 	isAdmin := creds.Username == adminUsername && creds.Password == adminPassword
 
