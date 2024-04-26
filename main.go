@@ -11,6 +11,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/handlers"
 )
 
 // Credentials struct for parsing login request body
@@ -150,8 +151,16 @@ func main() {
         port = "3000"
     }
 
-	log.Println("Server is running on port "+ port)
+	 // CORS middleware
+	 corsHandler := handlers.CORS(
+        handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+        handlers.AllowedOrigins([]string{"*"}), // Allow requests from any origin
+        handlers.AllowCredentials(),
+    )
 
+    // Apply CORS middleware to your router
+    http.Handle("/", corsHandler(r))
 
-	log.Fatal(http.ListenAndServe("0.0.0.0:" + port, r))
+    log.Println("Server is running on port " + port)
+    log.Fatal(http.ListenAndServe("0.0.0.0:" + port, nil))
 }
