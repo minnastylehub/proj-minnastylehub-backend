@@ -117,7 +117,6 @@ func DeleteItem(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	collection := client.Database(databaseName).Collection(collectionName)
-
 	filter := bson.M{"_id": id}
 	_, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
@@ -146,4 +145,44 @@ func GetItem(id string) (models.Item, error) {
 	}
 
 	return item, nil
+}
+
+
+// GetItemsWithPagination retrieves items from the database with pagination
+func GetItemsWithPagination(offset, limit int) ([]models.Item, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	collection := client.Database(databaseName).Collection(collectionName)
+
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(offset))
+	findOptions.SetLimit(int64(limit))
+
+	cursor, err := collection.Find(ctx, bson.M{}, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var items []models.Item
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+
+// GetTotalItemCount retrieves the total count of items from the database
+func GetTotalItemCount() (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	collection := client.Database(databaseName).Collection(collectionName)
+
+	totalCount, err := collection.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return 0, err
+	}
+	return int(totalCount), nil
 }

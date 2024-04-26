@@ -10,21 +10,81 @@ import (
 	"minna-style-hub/sendemail"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetAllItems handles GET request to fetch all items// GetAllItems handles GET request to retrieve all items
+// GetAllItems handles GET request to fetch all items with pagination
 func GetAllItems(w http.ResponseWriter, r *http.Request) {
-	items, err := database.GetAllItems()
+	// Parse pagination parameters
+	page := 1
+	pageSize := 10 // Default page size
+	pageStr := r.URL.Query().Get("page")
+	if pageStr != "" {
+		p, err := strconv.Atoi(pageStr)
+		if err != nil || p < 1 {
+			http.Error(w, "Invalid page number", http.StatusBadRequest)
+			return
+		}
+		page = p
+	}
+
+	limitStr := r.URL.Query().Get("limit")
+	if limitStr != "" {
+		l, err := strconv.Atoi(limitStr)
+		if err != nil || l < 1 {
+			http.Error(w, "Invalid limit", http.StatusBadRequest)
+			return
+		}
+		pageSize = l
+	}
+
+	// Calculate offset
+	offset := (page - 1) * pageSize
+
+	// Retrieve items from the database with pagination
+	items, err := database.GetItemsWithPagination(offset, pageSize)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
+	// Retrieve total count of items
+	totalCount, err := database.GetTotalItemCount()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Construct paginated response
+	response := struct {
+		Meta struct {
+			Count  int `json:"count"`
+			Limit  int `json:"limit"`
+			Offset int `json:"offset"`
+		} `json:"meta"`
+		Result []models.Item `json:"result"`
+	}{
+		Meta: struct {
+			Count  int `json:"count"`
+			Limit  int `json:"limit"`
+			Offset int `json:"offset"`
+		}{
+			Count:  totalCount,
+			Limit:  pageSize,
+			Offset: offset,
+		},
+		Result: items,
+	}
+
+	// Set response headers and encode response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	json.NewEncoder(w).Encode(response)
 }
 
 func GetItem(w http.ResponseWriter, r *http.Request) {
