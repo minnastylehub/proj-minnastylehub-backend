@@ -139,6 +139,8 @@ func main() {
 	// Define routes
 	r.HandleFunc("/items", functions.GetAllItems).Methods("GET")
 	r.HandleFunc("/item/{id}", functions.GetItem).Methods("GET")
+	// Add new route for searching items
+	r.HandleFunc("/search", functions.SearchItemsHandler).Methods("GET")
 	r.HandleFunc("/feedback", functions.GetFeedback).Methods("POST")
 	r.HandleFunc("/login", LoginHandler).Methods("POST")
 	r.Handle("/items/add", AuthMiddleware(http.HandlerFunc(functions.AddItem))).Methods("POST")

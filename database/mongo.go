@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -185,4 +186,32 @@ func GetTotalItemCount() (int, error) {
 		return 0, err
 	}
 	return int(totalCount), nil
+}
+
+// SearchItems performs a search for items matching the query
+func SearchItems(query string) ([]models.Item, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    collection := client.Database(databaseName).Collection(collectionName)
+
+    // Define a filter for searching
+    filter := bson.M{
+        "$or": []bson.M{
+            {"title": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+            {"brand": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+        },
+    }
+
+    cursor, err := collection.Find(ctx, filter)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var items []models.Item
+    if err := cursor.All(ctx, &items); err != nil {
+        return nil, err
+    }
+    return items, nil
 }

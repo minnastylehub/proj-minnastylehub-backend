@@ -242,3 +242,25 @@ func getImageBase64() string {
 	imageBase64 := base64.StdEncoding.EncodeToString(imageData)
 	return imageBase64
 }
+
+// SearchItemsHandler handles search request to retrieve items matching the query
+func SearchItemsHandler(w http.ResponseWriter, r *http.Request) {
+    // Parse search query parameter
+    query := r.URL.Query().Get("q")
+    if query == "" {
+        http.Error(w, "Missing search query", http.StatusBadRequest)
+        return
+    }
+
+    // Perform search in the database
+    items, err := database.SearchItems(query)
+    if err != nil {
+        log.Println(err)
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+    // Set response headers and encode response
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(items)
+}
